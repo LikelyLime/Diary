@@ -37,7 +37,7 @@ class DiaryDetailViewController: UIViewController {
         self.titleLibel.text = diary.title
         self.contentsTextView.text = diary.contents
         self.dateLabel.text = dateToString(date: diary.date)
-
+ 
     }
     /**
      date타입을 String타입으로 변경해주는 Method
