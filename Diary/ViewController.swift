@@ -132,3 +132,29 @@ extension ViewController: WriteDiaryViewDelegate{
         self.collectionView.reloadData()
     }
 }
+
+/**
+ 콜랙션뷰를 선택했을때 발생되는 extension
+ */
+extension ViewController: UICollectionViewDelegate{
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let viewController = self.storyboard?.instantiateViewController(identifier: "DiaryDetailViewController") as? DiaryDetailViewController else {return}
+        let diary = self.diaryList[indexPath.row]
+        viewController.diary = diary
+        viewController.indexPath = indexPath
+        
+        viewController.delegate = self//>>??뭔지 이해안됨
+        
+        self.navigationController?.pushViewController(viewController, animated: true)
+    }
+}
+
+/**
+ diaryDetailViewController의 삭제버튼을 눌렀을 때 발생
+ */
+extension ViewController: DiaryDetailViewDelegate{
+    func didSelectDelete(indexPath: IndexPath) {
+        self.diaryList.remove(at: indexPath.row)
+        self.collectionView.deleteItems(at: [indexPath])
+    }
+}
