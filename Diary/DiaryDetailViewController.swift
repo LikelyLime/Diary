@@ -53,7 +53,37 @@ class DiaryDetailViewController: UIViewController {
      수정버튼을 눌렀을때 버튼 액션
      */
     @IBAction func tabEditButton(_ sender: UIButton) {
+        guard let viewController = self.storyboard?.instantiateViewController(identifier: "WriteDiaryViewController") as? WriteDiaryViewController else { return }
+        guard let indexPath = self.indexPath else { return }
+        guard let diary = diary else { return }
+        
+        viewController.diaryEditMode = .edit(indexPath, diary)
+        
+        /**
+         NotificationCenter 옵저빙 하기
+         */
+        NotificationCenter.default.addObserver(
+            self,//대상 인스턴스
+            selector: #selector(editDiaryNorification(_:)),//옵저빙을하다 대상을 발견하면 발생하는 이벤트
+            name: NSNotification.Name("editDiary"),
+            object: nil
+        )
+        self.navigationController?.pushViewController(viewController, animated: true)
     }
+    /**
+     NotificationCenter 발생시 실행되는 이벤트 method
+     */
+    @objc func editDiaryNorification(_ notification: Notification){
+        guard let diary = notification.object as? Diary else {
+            return
+        }
+        guard let row = notification.userInfo?["indexPath.row"] as? Int else{ return }
+        
+        self.diary = diary
+        self.configueView()
+    }
+    
+    
     /**
      삭제버튼 눌렀을때 버튼 액션
      */
@@ -63,5 +93,15 @@ class DiaryDetailViewController: UIViewController {
         }
         self.delegate?.didSelectDelete(indexPath: indexPath)
         self.navigationController?.popViewController(animated: true)
+    }
+    
+    /**
+     종료시 실행되는 method
+     */
+    deinit{
+        /**
+         종료시 가지고있는 모든 옵저버를 제거하는 method
+         */
+        NotificationCenter.default.removeObserver(self)
     }
 }

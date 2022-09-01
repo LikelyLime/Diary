@@ -23,8 +23,28 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         self.configureCollectionView()
         self.laodDiaryData()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(editDiaryNorification(_:)),
+            name: NSNotification.Name("editDiary"),
+            object: nil
+        )
     }
-    
+    /**
+     NotificationCenter 발생시 실행되는 이벤트 method
+     */
+    @objc func editDiaryNorification(_ notification: Notification){
+        guard let diary = notification.object as? Diary else {
+            return
+        }
+        guard let row = notification.userInfo?["indexPath.row"] as? Int else{ return }
+        
+        self.diaryList[row] = diary
+        self.diaryList = self.diaryList.sorted(by: {
+            $0.date.compare($1.date) == .orderedDescending
+        })
+        self.collectionView.reloadData()
+    }
     /**
      콜랙션 뷰에 데이터 표시하기
      */
