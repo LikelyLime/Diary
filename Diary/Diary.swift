@@ -12,4 +12,5 @@ struct Diary{
     var contents: String
     var date: Date
     var isStar: Bool
+    var uuidString: String
 }

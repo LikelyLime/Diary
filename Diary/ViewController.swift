@@ -29,7 +29,32 @@ class ViewController: UIViewController {
             name: NSNotification.Name("editDiary"),
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(starDiaryNotification(_:)),
+            name: NSNotification.Name("starDiary"),
+            object: nil)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(deleteDiaryNotification(_:)),
+            name: NSNotification.Name("deleteDiary"),
+            object: nil)
     }
+    @objc func deleteDiaryNotification(_ notification: Notification){
+        guard let uuidString = notification.object as? String else { return }
+        guard let index = self.diaryList.firstIndex(where: {$0.uuidString == uuidString } ) else { return }
+        self.diaryList.remove(at: index)
+        self.collectionView.deleteItems(at: [IndexPath(row: index, section: 0)])
+    } 
+    
+    @objc func starDiaryNotification(_ notification: Notification){
+        guard let starDiary = notification.object as?  [String: Any] else { return }
+        guard let isStar = starDiary["isStar"] as? Bool else { return }
+        guard let uuidString = starDiary["uuidString"] as? String else {return}
+        guard let index = self.diaryList.firstIndex(where: {$0.uuidString == uuidString } ) else { return }
+        self.diaryList[index].isStar = isStar
+    }
+    
     /**
      NotificationCenter 발생시 실행되는 이벤트 method
      */
@@ -37,9 +62,9 @@ class ViewController: UIViewController {
         guard let diary = notification.object as? Diary else {
             return
         }
-        guard let row = notification.userInfo?["indexPath.row"] as? Int else{ return }
-        
-        self.diaryList[row] = diary
+//        guard let row = notification.userInfo?["indexPath.row"] as? Int else{ return }
+        guard let index = self.diaryList.firstIndex(where: {$0.uuidString == diary.uuidString } ) else { return }
+        self.diaryList[index] = diary
         self.diaryList = self.diaryList.sorted(by: {
             $0.date.compare($1.date) == .orderedDescending
         })
@@ -81,6 +106,7 @@ class ViewController: UIViewController {
     private func saveDiaryList(){
         let data = self.diaryList.map{
             [
+                "uuidString" : $0.uuidString,
                 "title" : $0.title,
                 "contents" : $0.contents,
                 "date" : $0.date,
@@ -99,11 +125,12 @@ class ViewController: UIViewController {
         let userDefaults = UserDefaults.standard
         guard let Data = userDefaults.object(forKey: "DiaryList") as? [[String: Any]] else{ return }
         self.diaryList = Data.compactMap {
+            guard let uuidString = $0["uuidString"] as? String else { return nil }
             guard let title = $0["title"] as? String else { return nil }
             guard let contents = $0["contents"] as? String else { return nil }
             guard let date = $0["date"] as? Date else { return nil }
             guard let isStar = $0["isStar"] as? Bool else { return nil }
-            return Diary(title: title, contents: contents, date: date, isStar: isStar)
+            return Diary(title: title, contents: contents, date: date, isStar: isStar, uuidString: uuidString)
         }
         //날짜별로 정렬시키기
         self.diaryList = self.diaryList.sorted(by:{
@@ -163,7 +190,7 @@ extension ViewController: UICollectionViewDelegate{
         viewController.diary = diary
         viewController.indexPath = indexPath
         
-        viewController.delegate = self//>>??뭔지 이해안됨
+//        viewController.delegate = self//>>??뭔지 이해안됨
         
         self.navigationController?.pushViewController(viewController, animated: true)
     }
@@ -172,9 +199,12 @@ extension ViewController: UICollectionViewDelegate{
 /**
  diaryDetailViewController의 삭제버튼을 눌렀을 때 발생
  */
-extension ViewController: DiaryDetailViewDelegate{
-    func didSelectDelete(indexPath: IndexPath) {
-        self.diaryList.remove(at: indexPath.row)
-        self.collectionView.deleteItems(at: [indexPath])
-    }
-}
+//extension ViewController: DiaryDetailViewDelegate{
+////    func didSelectDelete(indexPath: IndexPath) {
+////        self.diaryList.remove(at: indexPath.row)
+////        self.collectionView.deleteItems(at: [indexPath])
+////    }
+////    func didSelectStar(indexPath: IndexPath, isStar: Bool) {
+////        self.diaryList[indexPath.row].isStar = isStar
+////    }
+//}

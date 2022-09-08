@@ -111,22 +111,22 @@ class WriteDiaryViewController: UIViewController {
         guard let contents = self.contentsTextView.text else { return }
         guard let date = self.diaryDate else { return }
         
-        let diary = Diary(title: title, contents: contents, date: date, isStar: false)
+       
         
         /**
         수정버튼일 때
          */
         switch self.diaryEditMode{
-        case .new:
+        case .new: 
+            let diary = Diary(title: title, contents: contents, date: date, isStar: false, uuidString: UUID().uuidString)
             self.delegeate?.didSelectReigster(diary: diary)
             
-        case let .edit(indexPath, _):
+        case let .edit(indexPath, diary):
+            let diary = Diary(title: title, contents: contents, date: date, isStar: diary.isStar, uuidString: UUID().uuidString)
             NotificationCenter.default.post(
                 name: NSNotification.Name("editDiary"),//NSNotification의 아이디
                 object: diary,//전달 할 객체
-                userInfo: [//같이 관련된 값도 함께 넘길 수 있다.
-                    "indexPath.row" : indexPath.row
-            ])
+                userInfo: nil)
         }
         
         

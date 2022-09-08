@@ -10,10 +10,13 @@ import UIKit
 /**
  삭제구현 protocol
  */
-protocol DiaryDetailViewDelegate: AnyObject{
-    func didSelectDelete(indexPath: IndexPath)
-    
-}
+//protocol DiaryDetailViewDelegate: AnyObject{
+//    func didSelectDelete(indexPath: IndexPath)
+//    /**
+//     즐겨찾기 protocol
+//     */
+////    func didSelectStar(indexPath: IndexPath, isStar: Bool)
+//}
 
 
 class DiaryDetailViewController: UIViewController {
@@ -25,11 +28,29 @@ class DiaryDetailViewController: UIViewController {
     var diary: Diary? //화면에서 전달받는 프로퍼티
     var indexPath: IndexPath?
     
-    weak var delegate: DiaryDetailViewDelegate?
+//    weak var delegate: DiaryDetailViewDelegate?
+    
+    var starButton: UIBarButtonItem? //즐겨찾기 Button
     
     override func viewDidLoad() {
         super.viewDidLoad()
         self.configueView()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(starDiaryNotification(_:)),
+            name: NSNotification.Name("starDiary"),
+            object: nil)
+    }
+    
+    @objc func starDiaryNotification(_ notification: Notification){
+        guard let starDiary = notification.object as? [String: Any] else { return }
+        guard let isStar = starDiary["isStar"] as? Bool else { return }
+        guard let uuidString = starDiary["uuidString"] as? String else { return }
+        guard let diary = self.diary else { return }
+        if diary.uuidString == uuidString{
+            self.diary?.isStar = isStar
+            self.configueView()
+        }
     }
     
     private func configueView(){
@@ -37,8 +58,37 @@ class DiaryDetailViewController: UIViewController {
         self.titleLibel.text = diary.title
         self.contentsTextView.text = diary.contents
         self.dateLabel.text = dateToString(date: diary.date)
- 
+        self.starButton = UIBarButtonItem(image: nil, style: .plain, target: self, action: #selector(tabStarButton))
+        self.starButton?.image = diary.isStar ? UIImage(systemName: "star.fill") : UIImage(systemName: "star" )
+        self.starButton?.tintColor = .orange
+        self.navigationItem.rightBarButtonItem = self.starButton
     }
+    /**
+     starButton을 클릭했을때 실행되는 Selector
+     */
+    @objc func tabStarButton(){
+        guard let isStar = self.diary?.isStar else{ return }
+//        guard let indexPath = indexPath else {
+//            return
+//        }
+
+        if isStar {
+            self.starButton?.image = UIImage(systemName: "star")
+        }else{
+            self.starButton?.image = UIImage(systemName: "star.fill")
+        }
+        
+        self.diary?.isStar = !isStar
+        NotificationCenter.default.post(name: NSNotification.Name("starDiary"),
+            object: [
+                "diary" : self.diary,
+                "isStar" : self.diary?.isStar ?? false,
+                "uuidString" : diary?.uuidString
+            ],
+            userInfo: nil)
+        //self.delegate?.didSelectStar(indexPath: indexPath, isStar: self.diary?.isStar ?? false)
+    }
+    
     /**
      date타입을 String타입으로 변경해주는 Method
      */
@@ -48,6 +98,9 @@ class DiaryDetailViewController: UIViewController {
         formatter.locale = Locale(identifier: "ko-KR")
         return formatter.string(from: date)
     }
+    
+    
+    
     
     /**
      수정버튼을 눌렀을때 버튼 액션
@@ -77,7 +130,7 @@ class DiaryDetailViewController: UIViewController {
         guard let diary = notification.object as? Diary else {
             return
         }
-        guard let row = notification.userInfo?["indexPath.row"] as? Int else{ return }
+//        guard let row = notification.userInfo?["indexPath.row"] as? Int else{ return }
         
         self.diary = diary
         self.configueView()
@@ -88,10 +141,14 @@ class DiaryDetailViewController: UIViewController {
      삭제버튼 눌렀을때 버튼 액션
      */
     @IBAction func tabDeleteButton(_ sender: UIButton) {
-        guard let indexPath = indexPath else {
+        guard let uuidString = self.diary?.uuidString else {
             return
         }
-        self.delegate?.didSelectDelete(indexPath: indexPath)
+//        self.delegate?.didSelectDelete(indexPath: indexPath)
+        NotificationCenter.default.post(
+            name: NSNotification.Name("deleteDiary"),
+            object: uuidString,
+            userInfo: nil)
         self.navigationController?.popViewController(animated: true)
     }
     
